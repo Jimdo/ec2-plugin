@@ -61,6 +61,7 @@ import com.amazonaws.services.ec2.model.*;
  */
 public abstract class EC2AbstractSlave extends Slave {
     protected String instanceId;
+    protected String imageId;
 
     /**
      * Comes from {@link SlaveTemplate#initScript}.
@@ -99,11 +100,12 @@ public abstract class EC2AbstractSlave extends Slave {
 
 
     @DataBoundConstructor
-    public EC2AbstractSlave(String name, String instanceId, String description, String remoteFS, int sshPort, int numExecutors, Mode mode, String labelString, ComputerLauncher launcher, RetentionStrategy<EC2Computer> retentionStrategy, String initScript, List<? extends NodeProperty<?>> nodeProperties, String remoteAdmin, String rootCommandPrefix, String jvmopts, boolean stopOnTerminate, String idleTerminationMinutes, List<EC2Tag> tags, String cloudName, boolean usePrivateDnsName, int launchTimeout) throws FormException, IOException {
+    public EC2AbstractSlave(String name, String instanceId, String description, String remoteFS, int sshPort, int numExecutors, Mode mode, String labelString, ComputerLauncher launcher, RetentionStrategy<EC2Computer> retentionStrategy, String initScript, List<? extends NodeProperty<?>> nodeProperties, String remoteAdmin, String rootCommandPrefix, String jvmopts, boolean stopOnTerminate, String idleTerminationMinutes, List<EC2Tag> tags, String cloudName, boolean usePrivateDnsName, int launchTimeout, String imageId) throws FormException, IOException {
 
         super(name, "", remoteFS, numExecutors, mode, labelString, launcher, retentionStrategy, nodeProperties);
 
         this.instanceId = instanceId;
+        this.imageId = imageId;
         this.initScript  = initScript;
         this.remoteAdmin = remoteAdmin;
         this.rootCommandPrefix = rootCommandPrefix;
@@ -172,6 +174,13 @@ public abstract class EC2AbstractSlave extends Slave {
      */
     public String getInstanceId() {
         return instanceId;
+    }
+
+    /**
+     * EC2 image ID (AMI).
+     */
+    public String getImageId() {
+        return imageId;
     }
 
     @Override
@@ -243,13 +252,22 @@ public abstract class EC2AbstractSlave extends Slave {
         return result;
     }
 
-    void idleTimeout() {
+    public void idleTimeout() {
     	LOGGER.info("EC2 instance idle time expired: "+getInstanceId());
-    	if (!stopOnTerminate) {
-    		terminate();
-    	} else {
-    		stop();
-    	}
+        terminateOrStop();
+    }
+
+    public void imageUpdate() {
+        LOGGER.info("EC2 instance image id changed: "+getInstanceId()+" AMI: "+getImageId());
+        terminate();
+    }
+
+    private void terminateOrStop() {
+        if (!stopOnTerminate) {
+            terminate();
+        } else {
+            stop();
+        }
     }
 
     public long getLaunchTimeoutInMillis() {

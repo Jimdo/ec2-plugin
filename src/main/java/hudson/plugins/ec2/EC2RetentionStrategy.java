@@ -40,10 +40,11 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
     /** Number of minutes of idleness before an instance should be terminated.
 	    A value of zero indicates that the instance should never be automatically terminated */
     public final int idleTerminationMinutes;
-
+    /** Image id (AMI) from the configuration */
+    public final String ami;
 
     @DataBoundConstructor
-    public EC2RetentionStrategy(String idleTerminationMinutes) {
+    public EC2RetentionStrategy(String idleTerminationMinutes, String ami) {
         if (idleTerminationMinutes == null || idleTerminationMinutes.trim() == "") {
             this.idleTerminationMinutes = 0;
         } else {
@@ -56,23 +57,33 @@ public class EC2RetentionStrategy extends RetentionStrategy<EC2Computer> {
 
             this.idleTerminationMinutes = value;
         }
+
+        if ("".equals(ami)) {
+            LOGGER.info("Missing AMI value");
+        }
+        this.ami = ami;
     }
 
     @Override
 	public synchronized long check(EC2Computer c) {
 
-        /* If we've been told never to terminate, then we're done. */
-        if  (idleTerminationMinutes == 0)
-        	return 1;
-        
-        if (c.isIdle() && c.isOnline() && !disabled) {
-            // TODO: really think about the right strategy here
-            final long idleMilliseconds = System.currentTimeMillis() - c.getIdleStartMilliseconds();
-            if (idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
-                LOGGER.info("Idle timeout: "+c.getName());
-                c.getNode().idleTimeout();
-            }
+        /* If the computer is processing, offline or the check is disabled then we´e done. */
+        if (!c.isIdle() || !c.isOnline() || disabled) {
+            return 1;
         }
+
+        // TODO: really think about the right strategy here
+        final long idleMilliseconds = System.currentTimeMillis() - c.getIdleStartMilliseconds();
+        if (idleTerminationMinutes > 0 && idleMilliseconds > TimeUnit2.MINUTES.toMillis(idleTerminationMinutes)) {
+            LOGGER.info("Idle timeout: "+c.getName());
+            c.getNode().idleTimeout();
+        }
+
+        if (!c.getNode().getImageId().equals(ami)) {
+            LOGGER.info("Image update: "+c.getName());
+            c.getNode().imageUpdate();
+        }
+
         return 1;
     }
 

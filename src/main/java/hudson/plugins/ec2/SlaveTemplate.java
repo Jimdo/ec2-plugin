@@ -553,11 +553,11 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
 	}
 
     protected EC2OndemandSlave newOndemandSlave(Instance inst) throws FormException, IOException {
-        return new EC2OndemandSlave(inst.getInstanceId(), description, remoteFS, getSshPort(), getNumExecutors(), labels, mode, initScript, remoteAdmin, rootCommandPrefix, jvmopts, stopOnTerminate, idleTerminationMinutes, inst.getPublicDnsName(), inst.getPrivateDnsName(), EC2Tag.fromAmazonTags(inst.getTags()), parent.name, usePrivateDnsName, getLaunchTimeout());
+        return new EC2OndemandSlave(inst.getInstanceId(), description, remoteFS, getSshPort(), getNumExecutors(), labels, mode, initScript, remoteAdmin, rootCommandPrefix, jvmopts, stopOnTerminate, idleTerminationMinutes, inst.getPublicDnsName(), inst.getPrivateDnsName(), EC2Tag.fromAmazonTags(inst.getTags()), parent.name, usePrivateDnsName, getLaunchTimeout(), inst.getImageId());
     }
 
     protected EC2SpotSlave newSpotSlave(SpotInstanceRequest sir, String name) throws FormException, IOException {
-        return new EC2SpotSlave(name, sir.getSpotInstanceRequestId(), description, remoteFS, getSshPort(), getNumExecutors(), mode, initScript, labels, remoteAdmin, rootCommandPrefix, jvmopts, idleTerminationMinutes, EC2Tag.fromAmazonTags(sir.getTags()), parent.name, usePrivateDnsName, getLaunchTimeout());
+        return new EC2SpotSlave(name, sir.getSpotInstanceRequestId(), description, remoteFS, getSshPort(), getNumExecutors(), mode, initScript, labels, remoteAdmin, rootCommandPrefix, jvmopts, idleTerminationMinutes, EC2Tag.fromAmazonTags(sir.getTags()), parent.name, usePrivateDnsName, getLaunchTimeout(), sir.getLaunchSpecification().getImageId());
     }
 
     /**

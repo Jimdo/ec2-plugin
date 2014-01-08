@@ -1,9 +1,12 @@
 package hudson.plugins.ec2;
 
+import org.kohsuke.stapler.DataBoundConstructor;
+
 public class EC2SpotRetentionStrategy extends EC2RetentionStrategy {
 
-	public EC2SpotRetentionStrategy(String idleTerminationMinutes) {
-		super(idleTerminationMinutes);
+    @DataBoundConstructor
+	public EC2SpotRetentionStrategy(String idleTerminationMinutes, String ami) {
+		super(idleTerminationMinutes, ami);
 	}
 
 	@Override
